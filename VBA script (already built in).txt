@@ -1,0 +1,72 @@
+
+Function ReducePath$(key$)
+    If InStr(key, ".") Then ReducePath = Left(key, InStrRev(key, ".") - 1) Else ReducePath = key
+End Function
+
+Function ListPaths(dic)
+    Dim s$, v
+    For Each v In dic
+        s = s & v & " --> " & dic(v) & vbLf
+    Next
+    Debug.Print s
+End Function
+Function GetFilteredValues(dic, match)
+    Dim c&, i&, v, w
+    v = dic.Keys
+    ReDim w(1 To dic.Count)
+    For i = 0 To UBound(v)
+        If v(i) Like match Then
+            c = c + 1
+            w(c) = dic(v(i))
+        End If
+    Next
+    ReDim Preserve w(1 To c)
+    GetFilteredValues = w
+End Function
+Function GetFilteredTable(dic, cols)
+    Dim c&, i&, j&, v, w, z
+    v = dic.Keys
+    z = GetFilteredValues(dic, cols(0))
+    ReDim w(1 To UBound(z), 1 To UBound(cols) + 1)
+    For j = 1 To UBound(cols) + 1
+         z = GetFilteredValues(dic, cols(j - 1))
+         For i = 1 To UBound(z)
+            w(i, j) = z(i)
+         Next
+    Next
+    GetFilteredTable = w
+End Function
+
+'Above JSON Parser functions taken from https://medium.com/swlh/excel-vba-parse-json-easily-c2213f4d8e7a
+'Created by Daniel Ferry
+
+
+'Below is the HTTP GET request that automatically updates the cell for the Binance and Crypto.com prices.
+'Using the API request it gets the exact price in USDT for any crypto specified
+'Currently only written for ADA, and only Binance API implemented
+'Compares the two prices and states which one is better based on tier on each platform
+'Which gives us expense of trading costs (maker fees usually and for now)
+
+'Price is not rounded
+
+Sub updateBinanceCryptoInfo()
+
+Dim hReq As Object, json As Object
+
+Dim strUrl As String
+    strUrl = "https://api.binance.com/api/v3/ticker/price?symbol=ADAUSDT"
+
+    Set hReq = CreateObject("MSXML2.XMLHTTP")
+    With hReq
+        .Open "GET", strUrl, False
+        .Send
+    End With
+    
+    Set dic = ParseJSON(hReq.ResponseText)
+    'Debug.Print ListPaths(dic)
+    
+    Cells(23, 20) = dic("obj.price")
+    
+    Debug.Print dic("obj.price")
+    
+End Sub
